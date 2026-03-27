@@ -1,0 +1,10 @@
+﻿node_modules/
+.env
+*.sqlite
+*.db
+patch.js
+patch2.js
+patch3.js
+fx.js
+fix.js
+.venv/

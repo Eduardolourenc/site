@@ -1,0 +1,55 @@
+<%- include('layout', { body: `
+<section class="page-header">
+  <div>
+    <h1><i class="ph-duotone ph-pencil-simple"></i> Editar Sessão</h1>
+    <p>Corrija as informações desta sessão de estudo.</p>
+  </div>
+</section>
+
+<section class="layout-single-col card">
+  <form id="edit-form" action="/edit/${session.id}" method="POST" class="animate__animated animate__fadeIn">
+    <div class="form-group">
+      <label for="date"><i class="ph-duotone ph-calendar"></i> Data</label>
+      <input type="date" id="date" name="date" class="form-control" value="${session.date}" required>
+    </div>
+
+    <div class="form-group">
+      <label for="subject_id"><i class="ph-duotone ph-book-open"></i> Matéria</label>
+      <select id="subject_id" name="subject_id" class="form-control" required>
+        <option value="">Selecione...</option>
+        ${subjects.map(sub => `
+          <option value="${sub.id}" ${sub.id === session.subject_id ? 'selected' : ''}>
+            ${sub.name}
+          </option>
+        `).join('')}
+      </select>
+    </div>
+
+    <div class="form-group" style="display:flex; gap:1rem;">
+      <div style="flex:1;">
+        <label for="hours"><i class="ph-duotone ph-clock"></i> Horas</label>
+        <input type="number" id="hours" name="hours" class="form-control" min="0" step="1" value="${Math.floor(session.hours)}">
+      </div>
+      <div style="flex:1;">
+        <label for="minutes"><i class="ph-duotone ph-timer"></i> Minutos</label>
+        <input type="number" id="minutes" name="minutes" class="form-control" min="0" max="59" step="1" value="${Math.round((session.hours - Math.floor(session.hours)) * 60)}">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="questions"><i class="ph-duotone ph-list-numbers"></i> Total de Questões (opcional)</label>
+      <input type="number" id="questions" name="questions" class="form-control" min="0" value="${session.questions}">
+    </div>
+
+    <div class="form-group">
+      <label for="correct"><i class="ph-duotone ph-check-circle"></i> Acertos (opcional)</label>
+      <input type="number" id="correct" name="correct" class="form-control" min="0" value="${session.correct}">
+    </div>
+
+    <div class="form-actions" style="display: flex; gap: 1rem; align-items: center; justify-content: space-between;">
+      <button type="submit" class="btn"><i class="ph-bold ph-floppy-disk"></i> Salvar Alterações</button>
+      <a href="/history" class="btn-secondary" style="background:#555; color:#fff"><i class="ph-bold ph-x"></i> Cancelar</a>
+    </div>
+  </form>
+</section>
+` }) %>

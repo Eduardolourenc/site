@@ -1,0 +1,131 @@
+<%- include('layout', { body: `
+<section class="page-header">
+  <div>
+    <h1><i class="ph-duotone ph-chart-bar"></i> Relatório mensal</h1>
+    <p>Acompanhe o seu ritmo de estudos ao longo do mês</p>
+  </div>
+</section>
+
+<section class="card">
+  <h2><i class="ph-duotone ph-funnel"></i> Filtros do relatório</h2>
+  <form method="GET" action="/report" class="form-grid">
+    <label>
+      Ano
+      <input type="number" name="year" min="2000" max="2100" value="${filters.year || new Date().getFullYear()}" required />
+    </label>
+    <label>
+      Mês
+      <input type="number" name="month" min="1" max="12" value="${filters.month || (new Date().getMonth()+1)}" required />
+    </label>
+    <label>
+      Matéria (opcional)
+      <select name="subject_id">
+        <option value="">📚 Todas</option>
+        ${subjects.map(s => `<option value="${s.id}" ${String(filters.subject_id) === String(s.id) ? 'selected' : ''}>${s.name}</option>`).join('')}
+      </select>
+    </label>
+    <button type="submit" class="btn-primary" style="align-self: flex-end; margin-bottom: 0px;"><i class="ph-bold ph-chart-line-up"></i> Gerar</button>
+  </form>
+</section>
+
+${chartData ? `
+<section class="card">
+  <h2><i class="ph-duotone ph-trend-up"></i> Curva de Horas Estudadas</h2>
+  <div style="margin: 1.5rem 0; padding: 1rem; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+    <canvas id="hoursChart" height="80"></canvas>
+  </div>
+
+  <h2 style="margin-top: 3rem;"><i class="ph-duotone ph-check-circle"></i> Evolução de Questões e Acertos</h2>
+  <div style="margin: 1.5rem 0; padding: 1rem; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+    <canvas id="questionsChart" height="80"></canvas>
+  </div>
+
+  <h2 style="margin-top: 3rem;"><i class="ph-duotone ph-table"></i> Detalhamento Diário</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Data</th>
+        <th>Tempo Estudado</th>
+        <th>Questões Feitas</th>
+        <th>Acertos</th>
+        <th>Aproveitamento</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${chartData.labels.map((d, i) => `
+        <tr>
+          <td>${d}</td>
+          <td>${chartData.displayHours[i]}</td>
+          <td>${chartData.dataQuestions[i]}</td>
+          <td>${chartData.dataCorrect[i]}</td>
+          <td>
+            <span class="badge" style="background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.3); color: #34d399;">
+              ${chartData.displayAccuracy[i]}
+            </span>
+          </td>
+        </tr>
+      `).join('')}
+    </tbody>
+  </table>
+</section>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const ctxHours = document.getElementById("hoursChart").getContext("2d");
+  new Chart(ctxHours, {
+    type: "line",
+    data: {
+      labels: ${JSON.stringify(chartData.labels)},
+      datasets: [{
+        label: "Horas Estudadas",
+        data: ${JSON.stringify(chartData.dataHours)},
+        borderColor: "#8b5cf6",
+        backgroundColor: "rgba(139, 92, 246, 0.2)",
+        fill: true,
+        tension: 0.4,
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { labels: { color: "#e5e7eb" } } },
+      scales: {
+        y: { beginAtZero: true, grid: { color: "rgba(255,255,255,0.1)" }, ticks: { color: "#9ca3af" } },
+        x: { grid: { color: "rgba(255,255,255,0.1)" }, ticks: { color: "#9ca3af" } }
+      }
+    }
+  });
+
+  const ctxQuestions = document.getElementById("questionsChart").getContext("2d");
+  new Chart(ctxQuestions, {
+    type: "bar",
+    data: {
+      labels: ${JSON.stringify(chartData.labels)},
+      datasets: [
+        {
+          label: "Questões Feitas",
+          data: ${JSON.stringify(chartData.dataQuestions)},
+          backgroundColor: "rgba(79, 70, 229, 0.8)",
+          borderRadius: 4
+        },
+        {
+          label: "Acertos",
+          data: ${JSON.stringify(chartData.dataCorrect)},
+          backgroundColor: "rgba(16, 185, 129, 0.8)",
+          borderRadius: 4
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { labels: { color: "#e5e7eb" } } },
+      scales: {
+        y: { beginAtZero: true, grid: { color: "rgba(255,255,255,0.1)" }, ticks: { color: "#9ca3af" } },
+        x: { grid: { color: "rgba(255,255,255,0.1)" }, ticks: { color: "#9ca3af" } }
+      }
+    }
+  });
+</script>
+` : `
+<p class="hint">Escolha ano e mês e clique em Gerar para ver o relatório.</p> 
+`}
+` }) %>

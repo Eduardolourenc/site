@@ -1,0 +1,22 @@
+<%- include('layout', { body: `
+<section class="page-header">
+  <div>
+    <h1><i class="ph-duotone ph-books"></i> Matérias</h1>
+    <p>Adicione as disciplinas que você estuda para organizar o foco.</p>
+  </div>
+</section>
+
+<section class="card">
+  <h2><i class="ph-duotone ph-plus-circle"></i> Cadastrar nova</h2>
+  <form method="POST" action="/subjects" class="form-inline">
+    <input type="text" name="name" placeholder="Ex: Matemática, Direito Constitucional..." required style="max-width: 400px;"/>
+    <button type="submit" class="btn-primary"><i class="ph-bold ph-plus"></i> Adicionar</button>
+  </form>
+
+  <h2 style="margin-top: 2rem;"><i class="ph-duotone ph-book-bookmark"></i> Minhas matérias</h2>
+  <div class="badges-container">
+    ${subjects.length === 0 ? '<p class="hint">Nenhuma matéria cadastrada.</p>' : ''}
+    ${subjects.map(s => `<span class="badge"><i class="ph-fill ph-book-open"></i> ${s.name}</span>`).join('')}
+  </div>
+</section>
+` }) %>

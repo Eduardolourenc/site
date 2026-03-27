@@ -1,0 +1,64 @@
+<%- include('layout', { body: `
+<section class="page-header">
+  <div>
+    <h1><i class="ph-duotone ph-clock-counter-clockwise"></i> Histórico de estudos</h1>
+    <p>Veja todas as sessões registradas, edite ou exclua conforme necessário.</p>
+  </div>
+</section>
+
+<section class="card">
+  <form method="GET" action="/history" class="form-inline" style="max-width: 500px; margin-bottom: 2rem;">
+    <select name="subject_id" class="form-control">
+      <option value="">📚 Todas as matérias</option>
+      ${subjects.map(s => `<option value="${s.id}" ${String(selectedSubjectId) === String(s.id) ? 'selected' : ''}>${s.name}</option>`).join('')}
+    </select>
+    <button type="submit" class="btn-secondary"><i class="ph-bold ph-funnel"></i> Filtrar</button>
+  </form>
+
+  <div class="table-wrapper">
+    <table style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr style="text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1);">
+          <th style="padding: 1rem 0;">Data</th>
+          <th>Matéria</th>
+          <th>Tempo</th>
+          <th>Questões</th>
+          <th>Acertos</th>
+          <th>Aproveitamento</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${sessions.length === 0 ? `
+          <tr>
+            <td colspan="7" class="hint" style="padding: 1rem 0;">Nenhum registro encontrado.</td>
+          </tr>
+        ` : sessions.map(s => `
+          <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+            <td style="padding: 1rem 0;">${s.date}</td>
+            <td>${s.subject_name}</td>
+            <td>${s.formatted_time}</td>
+            <td>${s.questions}</td>
+            <td>${s.correct}</td>
+            <td>
+              <span class="badge" style="background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.3); color: #34d399;">
+                ${s.accuracy}
+              </span>
+            </td>
+            <td style="display: flex; gap: 0.5rem; align-items: center; padding: 0.8rem 0;">
+              <a href="/edit/${s.id}" class="btn-secondary" style="padding: 0.3rem; border-radius: 4px;" title="Editar">
+                 <i class="ph-bold ph-pencil-simple"></i>
+              </a>
+              <form action="/delete/${s.id}" method="POST" style="margin: 0;" onsubmit="return confirm('Tem certeza que deseja excluir esta sessão?');">
+                 <button type="submit" class="btn-danger" style="padding: 0.3rem; border-radius: 4px;" title="Excluir">
+                    <i class="ph-bold ph-trash"></i>
+                 </button>
+              </form>
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  </div>
+</section>
+` }) %>

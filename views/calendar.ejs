@@ -1,0 +1,112 @@
+<%- include('layout', { body: `
+<section class="page-header">
+  <div>
+    <h1><i class="ph-duotone ph-calendar"></i> Calendário de Estudos</h1>
+    <p>Acompanhe seus dias mais produtivos e veja se bateu as metas diárias.</p>
+  </div>
+</section>
+
+<section class="card">
+  <!-- Legenda das Cores -->
+  <div style="display: flex; gap: 1rem; margin-bottom: 1rem; align-items: center; justify-content: flex-end;">
+    <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
+      <span style="width: 12px; height: 12px; border-radius: 50%; background: #10b981; display: inline-block;"></span> 
+      Meta Atingida (&ge; ${dailyGoal}h)
+    </div>
+    <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
+      <span style="width: 12px; height: 12px; border-radius: 50%; background: #8b5cf6; display: inline-block;"></span> 
+      Menos que a Meta
+    </div>
+  </div>
+
+  <div id="calendar" style="min-height: 500px; color: var(--text-light);"></div>
+</section>
+
+<!-- FullCalendar e Idioma -->
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js'></script>
+
+<style>
+  /* Ajustes de Tema (Dark) para o Calendário */
+  .fc-theme-standard td, .fc-theme-standard th {
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  .fc-col-header-cell-cushion {
+    color: var(--text-light);
+    font-weight: 500;
+    padding: 10px 0;
+  }
+  .fc-daygrid-day-number {
+    color: var(--text-light);
+  }
+  .fc-event {
+    border: none;
+    border-radius: 4px;
+    padding: 2px 4px;
+    font-weight: 500;
+    font-size: 0.85rem;
+    text-align: center;
+  }
+  .fc .fc-toolbar-title {
+    font-size: 1.5rem;
+    color: var(--primary-light);
+  }
+  .fc .fc-button-primary {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    text-transform: capitalize;
+  }
+  .fc .fc-button-primary:hover {
+    background-color: var(--primary);
+    border-color: var(--primary);
+  }
+  .fc .fc-button-primary:not(:disabled).fc-button-active, 
+  .fc .fc-button-primary:not(:disabled):active {
+    background-color: var(--primary);
+    border-color: var(--primary);
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var calendarEl = document.getElementById('calendar');
+    var rawData = ${JSON.stringify(data)};
+    var dailyGoal = ${dailyGoal};
+    
+    var events = rawData.map(function(d) {
+      // Formatar horas ex: 4h 30m
+      var hrs = Math.floor(d.total_hours);
+      var mins = Math.round((d.total_hours - hrs) * 60);
+      var timeStr = hrs + 'h ' + mins + 'm';
+      
+      // Cor Verde se bateu a meta, roxo (primary) se não.
+      var isGoalAchieved = d.total_hours >= dailyGoal;
+      
+      return {
+        title: timeStr,
+        start: d.date,
+        allDay: true,
+        backgroundColor: isGoalAchieved ? '#10b981' : '#8b5cf6',
+        textColor: '#ffffff'
+      };
+    });
+
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+      initialView: 'dayGridMonth',
+      locale: 'pt-br',
+      events: events,
+      height: 'auto',
+      firstDay: 1, // Começa na segunda-feira
+      headerToolbar: {
+        left: 'prev,next today',
+        center: 'title',
+        right: 'dayGridMonth'
+      },
+      buttonText: {
+        today: 'Hoje',
+        month: 'Mês'
+      }
+    });
+    calendar.render();
+  });
+</script>
+` }) %>
