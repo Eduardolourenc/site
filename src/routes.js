@@ -25,6 +25,46 @@ function formatSessions(sessions) {
   });
 }
 
+// Middleware para calcular a ofensiva (streak)
+router.use((req, res, next) => {
+  db.get('SELECT value FROM settings WHERE key = ?', ['daily_goal'], (err, row) => {
+    const dailyGoal = row ? parseFloat(row.value) : 1;
+    db.all('SELECT date, SUM(hours) as total_hours FROM study_sessions GROUP BY date', (err, rows) => {
+      let streak = 0;
+      let isTodayMet = false;
+      if (rows && !err) {
+        const dailyHoursMap = {};
+        rows.forEach(s => {
+          dailyHoursMap[s.date] = s.total_hours;
+        });
+
+        let checkDate = new Date();
+        const todayStr = formatDate(checkDate);
+        const todayHours = dailyHoursMap[todayStr] || 0;
+        isTodayMet = todayHours >= dailyGoal;
+
+        checkDate.setDate(checkDate.getDate() - 1);
+        
+        while (true) {
+          let dateStr = formatDate(checkDate);
+          let hours = dailyHoursMap[dateStr] || 0;
+          if (hours >= dailyGoal) {
+            streak++;
+            checkDate.setDate(checkDate.getDate() - 1);
+          } else {
+            break;
+          }
+        }
+
+        if (isTodayMet) streak++;
+      }
+      res.locals.streak = streak;
+      res.locals.goalMetToday = isTodayMet;
+      next();
+    });
+  });
+});
+
 // Redirecionar raiz para o dashboard
 router.get('/', (req, res) => {
   res.redirect('/dashboard');

@@ -16,7 +16,14 @@
 </head>
 <body class="animate__animated animate__fadeIn">
   <header class="top-bar">
-    <h1><i class="ph-fill ph-student"></i> MonitoraStudy</h1>
+    <div style="display: flex; align-items: center; gap: 1rem;">
+      <h1><i class="ph-fill ph-student"></i> MonitoraStudy</h1>
+      <% if (typeof streak !== 'undefined') { %>
+        <div title="Dias seguidos batendo a meta!" class="streak-badge <%= goalMetToday ? 'met' : 'not-met' %>">
+          <i class="ph-fill ph-fire"></i> <%= streak %>
+        </div>
+      <% } %>
+    </div>
     <nav>
       <a href="/dashboard"><i class="ph ph-squares-four"></i> Dashboard</a>
       <a href="/study"><i class="ph ph-timer"></i> Estudar</a>
