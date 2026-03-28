@@ -33,18 +33,25 @@ ${insight ? `
     <p class="stat-sub" style="text-align: right; margin-top: -0.5rem;">${Math.round((todayStats.total_hours / dailyGoal) * 100)}% concluído</p>
   </article>
 
-  <article class="stat-card" style="grid-column: span 1.5;">
+  <article class="stat-card" style="grid-column: span 1;">
     <div class="stat-icon"><i class="ph-duotone ph-calendar-blank"></i></div>   
     <h2>Últimos 7 dias</h2>
     <p class="stat-main">${weekHours}</p>
     <p class="stat-sub">Tempo total estudado</p>
   </article>
 
-  <article class="stat-card" style="grid-column: span 1.5;">
+  <article class="stat-card" style="grid-column: span 1;">
     <div class="stat-icon"><i class="ph-duotone ph-calendar"></i></div>
     <h2>Este mês</h2>
     <p class="stat-main">${monthHours}</p>
-    <p class="stat-sub">Horas registradas no mês atual</p>
+    <p class="stat-sub">Horas no mês atual</p>
+  </article>
+
+  <article class="stat-card" style="grid-column: span 1;">
+    <div class="stat-icon"><i class="ph-duotone ph-clock"></i></div>
+    <h2>Total Geral</h2>
+    <p class="stat-main">${allTimeHours}</p>
+    <p class="stat-sub">Todas as horas acumuladas</p>
   </article>
 </section>
 

@@ -111,38 +111,48 @@ router.get('/dashboard', (req, res) => {
               (errMonth, monthStats) => {
                 if (errMonth) return res.status(500).send('Erro ao carregar resumo do mês');
 
-                db.all(
-                  `SELECT s.id, s.date, s.hours, s.questions, s.correct, sub.name AS subject_name
-                     FROM study_sessions s
-                     JOIN subjects sub ON s.subject_id = sub.id
-                     ORDER BY s.date DESC, s.id DESC
-                     LIMIT 5`,
+                db.get(
+                  `SELECT COALESCE(SUM(hours), 0) as total_hours
+                     FROM study_sessions`, 
                   [],
-                  (errSessions, sessions) => {
-                    if (errSessions) return res.status(500).send('Erro ao carregar últimos estudos');
+                  (errAllTime, allTimeStats) => {
+                    if (errAllTime) return res.status(500).send('Erro ao carregar resumo total');
 
-                    // Insight simples: comparar com a média da semana
-                    const weekAvg = weekStats.total_hours / 7;
-                    let insight = "";
-                    if (todayStats.total_hours > dailyGoal) {
-                      insight = `🚀 Parabéns! Você bateu sua meta diária de ${dailyGoal}h.`;
-                    } else if (todayStats.total_hours > weekAvg && todayStats.total_hours > 0) {
-                      insight = `📈 Muito bom! Você já estudou mais do que sua média semanal (${formatTime(weekAvg)}).`;
-                    } else if (todayStats.total_hours === 0) {
-                      insight = "💡 Comece agora! Cada minuto conta para o seu sucesso.";
-                    } else {
-                      insight = "🔥 Continue focado! O importante é manter a constância.";
-                    }
+                    db.all(
+                      `SELECT s.id, s.date, s.hours, s.questions, s.correct, sub.name AS subject_name
+                         FROM study_sessions s
+                         JOIN subjects sub ON s.subject_id = sub.id
+                         ORDER BY s.date DESC, s.id DESC
+                         LIMIT 5`,
+                      [],
+                      (errSessions, sessions) => {
+                        if (errSessions) return res.status(500).send('Erro ao carregar últimos estudos');
 
-                    res.render('dashboard', {
-                      todayStats,
-                      todayHoursFmt: formatTime(todayStats.total_hours),
-                      weekHours: formatTime(weekStats.total_hours),
-                      monthHours: formatTime(monthStats.total_hours),
-                      sessions: formatSessions(sessions),
-                      dailyGoal,
-                      insight
-                    });
+                        // Insight simples: comparar com a média da semana
+                        const weekAvg = weekStats.total_hours / 7;
+                        let insight = "";
+                        if (todayStats.total_hours > dailyGoal) {
+                          insight = `🚀 Parabéns! Você bateu sua meta diária de ${dailyGoal}h.`;
+                        } else if (todayStats.total_hours > weekAvg && todayStats.total_hours > 0) {
+                          insight = `📈 Muito bom! Você já estudou mais do que sua média semanal (${formatTime(weekAvg)}).`;
+                        } else if (todayStats.total_hours === 0) {
+                          insight = "💡 Comece agora! Cada minuto conta para o seu sucesso.";
+                        } else {
+                          insight = "🔥 Continue focado! O importante é manter a constância.";
+                        }
+
+                        res.render('dashboard', {
+                          todayStats,
+                          todayHoursFmt: formatTime(todayStats.total_hours),
+                          weekHours: formatTime(weekStats.total_hours),
+                          monthHours: formatTime(monthStats.total_hours),
+                          allTimeHours: formatTime(allTimeStats.total_hours),
+                          sessions: formatSessions(sessions),
+                          dailyGoal,
+                          insight
+                        });
+                      }
+                    );
                   }
                 );
               }
@@ -196,25 +206,35 @@ router.get('/history', (req, res) => {
   db.all('SELECT * FROM subjects ORDER BY name', [], (errSubjects, subjects) => {
     if (errSubjects) return res.status(500).send('Erro ao carregar matérias');
 
-    let query = `SELECT s.id, s.date, s.hours, s.questions, s.correct, sub.name AS subject_name
-                   FROM study_sessions s
-                   JOIN subjects sub ON s.subject_id = sub.id`;
-    const params = [];
-
+    let totalQuery = 'SELECT COALESCE(SUM(hours), 0) as total_hours FROM study_sessions';
+    let totalParams = [];
     if (subject_id) {
-      query += ' WHERE s.subject_id = ?';
-      params.push(subject_id);
+       totalQuery += ' WHERE subject_id = ?';
+       totalParams.push(subject_id);
     }
 
-    query += ' ORDER BY s.date DESC, s.id DESC LIMIT 50';
+    db.get(totalQuery, totalParams, (errTotal, totalRow) => {
+      let query = `SELECT s.id, s.date, s.hours, s.questions, s.correct, sub.name AS subject_name
+                     FROM study_sessions s
+                     JOIN subjects sub ON s.subject_id = sub.id`;
+      const params = [];
 
-    db.all(query, params, (err, sessions) => {
-      if (err) return res.status(500).send('Erro ao carregar histórico');      
+      if (subject_id) {
+        query += ' WHERE s.subject_id = ?';
+        params.push(subject_id);
+      }
 
-      res.render('history', {
-        subjects,
-        sessions: formatSessions(sessions),
-        selectedSubjectId: subject_id || '',
+      query += ' ORDER BY s.date DESC, s.id DESC LIMIT 50';
+
+      db.all(query, params, (err, sessions) => {
+        if (err) return res.status(500).send('Erro ao carregar histórico');      
+
+        res.render('history', {
+          subjects,
+          sessions: formatSessions(sessions),
+          selectedSubjectId: subject_id || '',
+          totalHoursFilter: formatTime(totalRow ? totalRow.total_hours : 0)
+        });
       });
     });
   });

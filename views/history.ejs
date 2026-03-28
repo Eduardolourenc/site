@@ -1,8 +1,12 @@
 <%- include('layout', { body: `
-<section class="page-header">
+<section class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
   <div>
     <h1><i class="ph-duotone ph-clock-counter-clockwise"></i> Histórico de estudos</h1>
     <p>Veja todas as sessões registradas, edite ou exclua conforme necessário.</p>
+  </div>
+  <div style="background: rgba(139, 92, 246, 0.1); padding: 0.8rem 1.5rem; border-radius: 8px; border: 1px solid rgba(139, 92, 246, 0.3); text-align: center; min-width: 150px;">
+    <p style="font-size: 0.9rem; color: var(--text-light); margin: 0 0 0.3rem 0;"><i class="ph-fill ph-clock"></i> Total Filtrado</p>
+    <strong style="font-size: 1.4rem; color: var(--primary);">${totalHoursFilter}</strong>
   </div>
 </section>
 
