@@ -85,6 +85,13 @@ const init = async () => {
       ON CONFLICT (key) DO NOTHING;
     `);
 
+    // Ensure we don't accidentally get completely locked out from settings
+    await pool.query(`
+      INSERT INTO settings (key, value) 
+      VALUES ('last_goal_date', '1970-01-01') 
+      ON CONFLICT (key) DO NOTHING;
+    `);
+
     await pool.query(`
       CREATE TABLE IF NOT EXISTS study_sessions (
         id SERIAL PRIMARY KEY,
@@ -96,6 +103,18 @@ const init = async () => {
         FOREIGN KEY (subject_id) REFERENCES subjects(id)
       );
     `);
+
+    // Add tracking of daily_goal for historical consistency
+    await pool.query(`
+      ALTER TABLE study_sessions ADD COLUMN IF NOT EXISTS daily_goal REAL;
+    `);
+
+    await pool.query(`
+      UPDATE study_sessions 
+      SET daily_goal = (SELECT CAST(value AS REAL) FROM settings WHERE key = 'daily_goal') 
+      WHERE daily_goal IS NULL;
+    `);
+
     console.log("Banco de dados Postgres inicializado via Neon!");
   } catch(e){
     console.error("Erro ao inicializar DB:", e);

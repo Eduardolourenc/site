@@ -1,8 +1,8 @@
 <%- include('layout', { body: `
 <section class="page-header">
   <div>
-    <h1><i class="ph-duotone ph-chart-bar"></i> Relatório mensal</h1>
-    <p>Acompanhe o seu ritmo de estudos ao longo do mês</p>
+    <h1><i class="ph-duotone ph-chart-bar"></i> Relatório de Estudos</h1>
+    <p>Acompanhe o seu ritmo de estudos e aproveitamento no período</p>
   </div>
 </section>
 
@@ -10,12 +10,12 @@
   <h2><i class="ph-duotone ph-funnel"></i> Filtros do relatório</h2>
   <form method="GET" action="/report" class="form-grid">
     <label>
-      Ano
-      <input type="number" name="year" min="2000" max="2100" value="${filters.year || new Date().getFullYear()}" required />
+      Data Inicial
+      <input type="date" name="start_date" value="${filters.start_date || ''}" required />
     </label>
     <label>
-      Mês
-      <input type="number" name="month" min="1" max="12" value="${filters.month || (new Date().getMonth()+1)}" required />
+      Data Final
+      <input type="date" name="end_date" value="${filters.end_date || ''}" required />
     </label>
     <label>
       Matéria (opcional)
@@ -30,6 +30,18 @@
 
 ${chartData ? `
 <section class="card">
+  <div style="display: flex; gap: 2rem; margin-bottom: 2rem; flex-wrap: wrap;">
+    <div style="flex: 1; min-width: 250px; background: rgba(79, 70, 229, 0.15); border: 1px solid rgba(79, 70, 229, 0.3); border-radius: 12px; padding: 1.5rem;">
+      <h3 style="margin-top: 0; color: #a5b4fc; font-size: 0.9rem;">TOTAL DE QUESTÕES NO PERÍODO</h3>
+      <div style="font-size: 2.5rem; font-weight: 700; color: #fff;">${chartData.totalPeriodQuestions}</div>
+    </div>
+    <div style="flex: 1; min-width: 250px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 1.5rem;">
+      <h3 style="margin-top: 0; color: #6ee7b7; font-size: 0.9rem;">APROVEITAMENTO DO PERÍODO</h3>
+      <div style="font-size: 2.5rem; font-weight: 700; color: #fff;">${chartData.overallAccuracy}</div>
+      <div style="font-size: 0.85rem; color: #a7f3d0; margin-top: 0.5rem;">${chartData.totalPeriodCorrect} acertos de ${chartData.totalPeriodQuestions} questões</div>
+    </div>
+  </div>
+
   <h2><i class="ph-duotone ph-trend-up"></i> Curva de Horas Estudadas</h2>
   <div style="margin: 1.5rem 0; padding: 1rem; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
     <canvas id="hoursChart" height="80"></canvas>
@@ -126,6 +138,6 @@ ${chartData ? `
   });
 </script>
 ` : `
-<p class="hint">Escolha ano e mês e clique em Gerar para ver o relatório.</p> 
+<p class="hint">Escolha a data inicial e final e clique em Gerar para ver o relatório.</p> 
 `}
 ` }) %>

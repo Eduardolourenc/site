@@ -1,0 +1,19 @@
+<%- include('layout', { body: `
+<section class="page-header">
+  <div>
+    <h1><i class="ph-duotone ph-target"></i> Meta do dia</h1>
+    <p>Defina sua meta de horas de estudo para hoje (${todayStr})</p>
+  </div>
+</section>
+
+<section class="card" style="max-width: 500px; margin: 2rem auto; text-align: center;">
+  <h2>Qual a sua meta de estudos para hoje?</h2>
+  <form method="POST" action="/set-goal" style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1.5rem;">
+    <label style="text-align: left;">
+      Meta (em horas)
+      <input type="number" name="goal" step="0.5" min="0" value="${currentGoal}" required style="font-size: 1.5rem; text-align: center;"/>
+    </label>
+    <button type="submit" class="btn-primary" style="font-size: 1.1rem; padding: 0.75rem;"><i class="ph-bold ph-check"></i> Definir e entrar</button>
+  </form>
+</section>
+` }) %>

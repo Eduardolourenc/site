@@ -80,6 +80,26 @@
     let elapsedMs = 0;
     let timerId = null;
 
+    function saveState() {
+      localStorage.setItem('studyTimerState', JSON.stringify({
+        startTime: startTime,
+        elapsedMs: elapsedMs
+      }));
+    }
+
+    function loadState() {
+      try {
+        const state = JSON.parse(localStorage.getItem('studyTimerState') || '{}');
+        if (state.elapsedMs) elapsedMs = state.elapsedMs;
+        if (state.startTime) {
+          startTime = state.startTime;
+          timerId = setInterval(updateDisplay, 1000);
+        }
+      } catch (e) {
+        console.error('Failed to load timer state:', e);
+      }
+    }
+
     function format(ms) {
       const totalSeconds = Math.floor(ms / 1000);
       const hours = Math.floor(totalSeconds / 3600);
@@ -99,17 +119,19 @@
       if (timerId) return;
       startTime = Date.now();
       timerId = setInterval(updateDisplay, 1000);
+      saveState();
     }
 
     function pause() {
-      if (!timerId) return;
-      clearInterval(timerId);
+      if (!timerId && !startTime) return;
+      if (timerId) clearInterval(timerId);
       timerId = null;
       if (startTime) {
         elapsedMs += Date.now() - startTime;
         startTime = null;
       }
       updateDisplay();
+      saveState();
     }
 
     function reset() {
@@ -118,14 +140,20 @@
       startTime = null;
       elapsedMs = 0;
       display.textContent = '00:00:00';
+      saveState();
     }
 
-    startBtn.addEventListener('click', start);
-    pauseBtn.addEventListener('click', pause);
-    resetBtn.addEventListener('click', reset);
+    loadState();
+    updateDisplay();
+
+    startBtn.addEventListener('click', function(e) { e.preventDefault(); start(); });
+    pauseBtn.addEventListener('click', function(e) { e.preventDefault(); pause(); });
+    resetBtn.addEventListener('click', function(e) { e.preventDefault(); reset(); });
     
-    transferBtn.addEventListener('click', function() {
+    transferBtn.addEventListener('click', function(e) {
+      e.preventDefault();
       pause(); // Pausa automaticamente
+
       const totalSeconds = Math.floor(elapsedMs / 1000);
       const hours = Math.floor(totalSeconds / 3600);
       const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -139,6 +167,10 @@
            transferBtn.innerHTML = '<i class="ph-bold ph-arrow-right"></i> Usar Tempo';
         }, 2000);
       }
+    });
+
+    form.addEventListener('submit', function() {
+      localStorage.removeItem('studyTimerState');
     });
 
     // Removemos a interceptação no evento 'submit' da form para não sobrescrever caso o usuário edite o valor manualmente

@@ -28,27 +28,31 @@ function formatSessions(sessions) {
 // Middleware para calcular a ofensiva (streak)
 router.use((req, res, next) => {
   db.get('SELECT value FROM settings WHERE key = ?', ['daily_goal'], (err, row) => {
-    const dailyGoal = row ? parseFloat(row.value) : 1;
-    db.all('SELECT date, SUM(hours) as total_hours FROM study_sessions GROUP BY date', (err, rows) => {
+    const defaultDailyGoal = row ? parseFloat(row.value) : 1;
+    // O cálculo da meta passa a considerar o `daily_goal` configurado NAQUELE DIA.
+    db.all('SELECT date, SUM(hours) as total_hours, MAX(daily_goal) as day_goal FROM study_sessions GROUP BY date', (err, rows) => {
       let streak = 0;
       let isTodayMet = false;
       if (rows && !err) {
-        const dailyHoursMap = {};
+        const dailyDataMap = {};
         rows.forEach(s => {
-          dailyHoursMap[s.date] = s.total_hours;
+          dailyDataMap[s.date] = {
+            hours: s.total_hours,
+            goal: s.day_goal || defaultDailyGoal
+          };
         });
 
         let checkDate = new Date();
         const todayStr = formatDate(checkDate);
-        const todayHours = dailyHoursMap[todayStr] || 0;
-        isTodayMet = todayHours >= dailyGoal;
+        const todayData = dailyDataMap[todayStr] || { hours: 0, goal: defaultDailyGoal };
+        isTodayMet = todayData.hours >= todayData.goal;
 
         checkDate.setDate(checkDate.getDate() - 1);
         
         while (true) {
           let dateStr = formatDate(checkDate);
-          let hours = dailyHoursMap[dateStr] || 0;
-          if (hours >= dailyGoal) {
+          let dayData = dailyDataMap[dateStr] || { hours: 0, goal: defaultDailyGoal };
+          if (dayData.hours >= dayData.goal) {
             streak++;
             checkDate.setDate(checkDate.getDate() - 1);
           } else {
@@ -62,6 +66,32 @@ router.use((req, res, next) => {
       res.locals.goalMetToday = isTodayMet;
       next();
     });
+  });
+});
+
+// Middleware para forçar a definição da meta diária
+router.use((req, res, next) => {
+  // Ignorar rotas de definição de meta para evitar loop infinito
+  if (req.path === '/set-goal') return next();
+
+  const todayStr = formatDate(new Date());
+
+  db.get('SELECT value FROM settings WHERE key = ?', ['last_goal_date'], (errDate, rowDate) => {
+    const lastGoalDate = rowDate ? rowDate.value : null;
+
+    if (lastGoalDate !== todayStr) {
+      return res.redirect('/set-goal');
+    }
+    next();
+  });
+});
+
+// Rota GET para renderizar a página de meta
+router.get('/set-goal', (req, res) => {
+  const todayStr = formatDate(new Date());
+  db.get('SELECT value FROM settings WHERE key = ?', ['daily_goal'], (errGoal, rowGoal) => {
+    const currentGoal = rowGoal ? parseFloat(rowGoal.value) : 4;
+    res.render('set_goal', { todayStr, currentGoal });
   });
 });
 
@@ -83,17 +113,19 @@ router.get('/dashboard', (req, res) => {
   const monthStartStr = formatDate(monthStart);
 
   db.get('SELECT value FROM settings WHERE key = ?', ['daily_goal'], (errGoal, rowGoal) => {
-    const dailyGoal = rowGoal ? parseFloat(rowGoal.value) : 4; // default 4h
+    const globalDailyGoal = rowGoal ? parseFloat(rowGoal.value) : 4; // default 4h
 
     db.get(
       `SELECT COALESCE(SUM(hours), 0) as total_hours,
               COALESCE(SUM(questions), 0) as total_questions,
-              COALESCE(SUM(correct), 0) as total_correct
+              COALESCE(SUM(correct), 0) as total_correct,
+              MAX(daily_goal) as day_target
          FROM study_sessions
          WHERE date = ?`,
       [todayStr],
       (errToday, todayStats) => {
         if (errToday) return res.status(500).send('Erro ao carregar resumo de hoje');
+        const todayGoal = todayStats.day_target || globalDailyGoal;
 
         db.get(
           `SELECT COALESCE(SUM(hours), 0) as total_hours
@@ -131,8 +163,8 @@ router.get('/dashboard', (req, res) => {
                         // Insight simples: comparar com a média da semana
                         const weekAvg = weekStats.total_hours / 7;
                         let insight = "";
-                        if (todayStats.total_hours > dailyGoal) {
-                          insight = `🚀 Parabéns! Você bateu sua meta diária de ${dailyGoal}h.`;
+                        if (todayStats.total_hours >= todayGoal) {
+                          insight = `🚀 Parabéns! Você bateu sua meta diária de ${todayGoal}h.`;
                         } else if (todayStats.total_hours > weekAvg && todayStats.total_hours > 0) {
                           insight = `📈 Muito bom! Você já estudou mais do que sua média semanal (${formatTime(weekAvg)}).`;
                         } else if (todayStats.total_hours === 0) {
@@ -148,7 +180,7 @@ router.get('/dashboard', (req, res) => {
                           monthHours: formatTime(monthStats.total_hours),
                           allTimeHours: formatTime(allTimeStats.total_hours),
                           sessions: formatSessions(sessions),
-                          dailyGoal,
+                          dailyGoal: todayGoal,
                           insight
                         });
                       }
@@ -161,6 +193,17 @@ router.get('/dashboard', (req, res) => {
         );
       }
     );
+  });
+});
+
+router.post('/set-goal', (req, res) => {
+  const { goal } = req.body;
+  const todayStr = formatDate(new Date());
+
+  db.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', ['daily_goal', goal], () => {
+    db.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', ['last_goal_date', todayStr], () => {
+      res.redirect('/dashboard');
+    });
   });
 });
 
@@ -191,11 +234,15 @@ router.post('/study', (req, res) => {
   const q = parseInt(questions, 10) || 0;
   const c = parseInt(correct, 10) || 0;
 
-  const stmt = `INSERT INTO study_sessions (date, subject_id, hours, questions, correct)
-                VALUES (?, ?, ?, ?, ?)`;
-  db.run(stmt, [date, subject_id, totalHours, q, c], (err) => {        
-    if (err) return res.status(500).send('Erro ao salvar estudo');
-    res.redirect('/history');
+  db.get('SELECT value FROM settings WHERE key = ?', ['daily_goal'], (errGoal, rowGoal) => {
+    const dailyGoal = rowGoal ? parseFloat(rowGoal.value) : 4;
+
+    const stmt = `INSERT INTO study_sessions (date, subject_id, hours, questions, correct, daily_goal)
+                  VALUES (?, ?, ?, ?, ?, ?)`;
+    db.run(stmt, [date, subject_id, totalHours, q, c, dailyGoal], (err) => {        
+      if (err) return res.status(500).send('Erro ao salvar estudo');
+      res.redirect('/history');
+    });
   });
 });
 
@@ -258,19 +305,26 @@ router.post('/subjects', (req, res) => {
   });
 });
 
-// Relatório mensal
+// Relatório por período
 router.get('/report', (req, res) => {
-  const { year, month, subject_id } = req.query;
+  const { start_date, end_date, subject_id, year, month } = req.query;
 
   db.all('SELECT * FROM subjects ORDER BY name', [], (err, subjects) => {
     if (err) return res.status(500).send('Erro ao carregar matérias');
 
-    if (!year || !month) {
-      return res.render('report', { subjects, chartData: null, filters: { year, month, subject_id } });
-    }
+    let startDate = start_date;
+    let endDate = end_date;
 
-    const startDate = `${year}-${month.padStart(2, '0')}-01`;
-    const endDate = `${year}-${month.padStart(2, '0')}-31`;
+    // Retrocompatibilidade para quem acessa usando year/month antigos
+    if (!startDate && !endDate && year && month) {
+      startDate = `${year}-${month.padStart(2, '0')}-01`;
+      endDate = `${year}-${month.padStart(2, '0')}-31`;
+    } else if (!startDate || !endDate) {
+      // Padrão do mês atual se nada for passado
+      const today = new Date();
+      startDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
+      endDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-31`;
+    }
 
     let query = `SELECT date, SUM(hours) as total_hours, SUM(questions) as total_questions, SUM(correct) as total_correct
                  FROM study_sessions
@@ -295,19 +349,28 @@ router.get('/report', (req, res) => {
       const displayHours = rows.map(r => formatTime(r.total_hours));
       const displayAccuracy = rows.map(r => r.total_questions > 0 ? Math.round((r.total_correct / r.total_questions) * 100) + "%" : "-");
 
+      const totalPeriodQuestions = dataQuestions.reduce((acc, curr) => acc + curr, 0);
+      const totalPeriodCorrect = dataCorrect.reduce((acc, curr) => acc + curr, 0);
+      const overallAccuracy = totalPeriodQuestions > 0 
+        ? Math.round((totalPeriodCorrect / totalPeriodQuestions) * 100) + "%" 
+        : "-";
+
       const chartData = {
         labels,
         dataHours,
         dataQuestions,
         dataCorrect,
         displayHours,
-        displayAccuracy
+        displayAccuracy,
+        totalPeriodQuestions,
+        totalPeriodCorrect,
+        overallAccuracy
       };
 
       res.render('report', {
         subjects,
         chartData,
-        filters: { year, month, subject_id }
+        filters: { start_date: startDate, end_date: endDate, subject_id }
       });
     });
   });
