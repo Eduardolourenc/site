@@ -460,4 +460,36 @@ router.get('/calendar', (req, res) => {
   });
 });
 
+// Checklist
+router.get('/checklist', (req, res) => {
+  db.all('SELECT * FROM checklist ORDER BY completed ASC, created_at DESC', (err, rows) => {
+    if (err) return res.status(500).send('Erro ao carregar checklist');
+    res.render('checklist', { tasks: rows || [] });
+  });
+});
+
+router.post('/checklist/add', (req, res) => {
+  const { task } = req.body;
+  if (!task) return res.redirect('/checklist');
+  db.run('INSERT INTO checklist (task) VALUES (?)', [task.trim()], (err) => {
+    res.redirect('/checklist');
+  });
+});
+
+router.post('/checklist/toggle', (req, res) => {
+  const { id } = req.body;
+  if (!id) return res.redirect('/checklist');
+  db.run('UPDATE checklist SET completed = NOT completed WHERE id = ?', [id], (err) => {
+    res.redirect('/checklist');
+  });
+});
+
+router.post('/checklist/delete', (req, res) => {
+  const { id } = req.body;
+  if (!id) return res.redirect('/checklist');
+  db.run('DELETE FROM checklist WHERE id = ?', [id], (err) => {
+    res.redirect('/checklist');
+  });
+});
+
 module.exports = router;

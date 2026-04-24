@@ -104,6 +104,15 @@ const init = async () => {
       );
     `);
 
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS checklist (
+        id SERIAL PRIMARY KEY,
+        task TEXT NOT NULL,
+        completed BOOLEAN DEFAULT false,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
     // Add tracking of daily_goal for historical consistency
     await pool.query(`
       ALTER TABLE study_sessions ADD COLUMN IF NOT EXISTS daily_goal REAL;

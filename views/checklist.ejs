@@ -1,0 +1,83 @@
+<style>
+  .checklist-container {
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  .task-list {
+    list-style: none;
+    padding: 0;
+  }
+  .task-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg-card);
+    padding: 1rem;
+    border-radius: var(--radius);
+    margin-bottom: 0.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  .task-item.completed span {
+    text-decoration: line-through;
+    opacity: 0.6;
+  }
+  .task-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+  }
+  .task-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+  .add-form {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+  }
+  .add-form input {
+    flex: 1;
+  }
+</style>
+
+<%- include('layout', { body: `
+<section class="page-header">
+  <div>
+    <h1><i class="ph-duotone ph-check-square"></i> Checklist de Estudos</h1>
+    <p>Organize os tópicos e matérias que você deseja estudar.</p>
+  </div>
+</section>
+
+<div class="checklist-container">
+  <form action="/checklist/add" method="POST" class="add-form card animate__animated animate__fadeIn">
+    <input type="text" name="task" id="task" placeholder="Ex: Revisar probabilidade, Ler cap 4..." required autocomplete="off" />
+    <button type="submit" class="btn-primary"><i class="ph-bold ph-plus"></i> Adicionar</button>
+  </form>
+
+  <ul class="task-list">
+    ${tasks.length === 0 ? '<p style="text-align:center; opacity:0.7;">Nenhuma tarefa adicionada ainda.</p>' : ''}
+    ${tasks.map(task => `
+      <li class="task-item ${task.completed ? 'completed' : ''} animate__animated animate__fadeInUp">
+        <div class="task-content">
+          <form action="/checklist/toggle" method="POST" style="margin:0;">
+            <input type="hidden" name="id" value="${task.id}" />
+            <button type="submit" style="background:none; border:none; cursor:pointer; color: ${task.completed ? 'var(--primary)' : 'var(--text)'};">
+              <i class="ph-fill ph-${task.completed ? 'check-circle' : 'circle'}" style="font-size: 1.5rem;"></i>
+            </button>
+          </form>
+          <span>${task.task.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</span>
+        </div>
+        <div class="task-actions">
+          <form action="/checklist/delete" method="POST" style="margin:0;">
+            <input type="hidden" name="id" value="${task.id}" />
+            <button type="submit" class="btn-danger" style="padding: 0.5rem;" title="Excluir" onclick="return confirm('Tem certeza que deseja excluir esta tarefa?')">
+              <i class="ph-bold ph-trash"></i>
+            </button>
+          </form>
+        </div>
+      </li>
+    `).join('')}
+  </ul>
+</div>
+`}) %>
