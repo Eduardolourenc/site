@@ -1,43 +1,95 @@
+<%
+  const pendingTasks = tasks.filter(t => !t.completed);
+  const completedTasks = tasks.filter(t => t.completed);
+%>
 <style>
   .checklist-container {
-    max-width: 600px;
+    max-width: 650px;
     margin: 0 auto;
+  }
+  .add-form {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
+  }
+  .add-form input {
+    flex: 1;
+    background: var(--bg-card);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 1rem;
+    font-size: 1rem;
+  }
+  .add-form button {
+    padding: 0 1.5rem;
+  }
+  .section-title {
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin: 2rem 0 1rem;
+    color: var(--text-light);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    padding-bottom: 0.5rem;
   }
   .task-list {
     list-style: none;
     padding: 0;
+    margin: 0;
   }
   .task-item {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: var(--bg-card);
-    padding: 1rem;
-    border-radius: var(--radius);
-    margin-bottom: 0.5rem;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 1rem 0.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.2s ease;
   }
-  .task-item.completed span {
-    text-decoration: line-through;
-    opacity: 0.6;
+  .task-item:last-child {
+    border-bottom: none;
+  }
+  .task-item:hover {
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 8px;
   }
   .task-content {
     display: flex;
     align-items: center;
     gap: 1rem;
     flex: 1;
+    font-size: 1.05rem;
+  }
+  .task-item.completed span {
+    text-decoration: line-through;
+    opacity: 0.4;
   }
   .task-actions {
-    display: flex;
-    gap: 0.5rem;
+    opacity: 0;
+    transition: opacity 0.2s;
   }
-  .add-form {
-    display: flex;
-    gap: 0.5rem;
-    margin-bottom: 2rem;
+  .task-item:hover .task-actions {
+    opacity: 1;
   }
-  .add-form input {
-    flex: 1;
+  .btn-invisible {
+    background: none; 
+    border: none; 
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s;
+  }
+  .btn-invisible:hover {
+    transform: scale(1.1);
+  }
+  .empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: rgba(255, 255, 255, 0.4);
   }
 </style>
 
@@ -45,39 +97,76 @@
 <section class="page-header">
   <div>
     <h1><i class="ph-duotone ph-check-square"></i> Checklist de Estudos</h1>
-    <p>Organize os tópicos e matérias que você deseja estudar.</p>
+    <p>Organize os tópicos e matérias que você deseja estudar com foco total.</p>
   </div>
 </section>
 
 <div class="checklist-container">
-  <form action="/checklist/add" method="POST" class="add-form card animate__animated animate__fadeIn">
-    <input type="text" name="task" id="task" placeholder="Ex: Revisar probabilidade, Ler cap 4..." required autocomplete="off" />
-    <button type="submit" class="btn-primary"><i class="ph-bold ph-plus"></i> Adicionar</button>
+  <form action="/checklist/add" method="POST" class="add-form animate__animated animate__fadeIn">
+    <input type="text" name="task" id="task" placeholder="O que você precisa aprender hoje?" required autocomplete="off" style="border-radius: var(--radius);"/>
+    <button type="submit" class="btn-primary" style="border-radius: var(--radius);"><i class="ph-bold ph-plus"></i></button>
   </form>
 
-  <ul class="task-list">
-    ${tasks.length === 0 ? '<p style="text-align:center; opacity:0.7;">Nenhuma tarefa adicionada ainda.</p>' : ''}
-    ${tasks.map(task => `
-      <li class="task-item ${task.completed ? 'completed' : ''} animate__animated animate__fadeInUp">
-        <div class="task-content">
-          <form action="/checklist/toggle" method="POST" style="margin:0;">
-            <input type="hidden" name="id" value="${task.id}" />
-            <button type="submit" style="background:none; border:none; cursor:pointer; color: ${task.completed ? 'var(--primary)' : 'var(--text)'};">
-              <i class="ph-fill ph-${task.completed ? 'check-circle' : 'circle'}" style="font-size: 1.5rem;"></i>
-            </button>
-          </form>
-          <span>${task.task.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</span>
-        </div>
-        <div class="task-actions">
-          <form action="/checklist/delete" method="POST" style="margin:0;">
-            <input type="hidden" name="id" value="${task.id}" />
-            <button type="submit" class="btn-danger" style="padding: 0.5rem;" title="Excluir" onclick="return confirm('Tem certeza que deseja excluir esta tarefa?')">
-              <i class="ph-bold ph-trash"></i>
-            </button>
-          </form>
-        </div>
-      </li>
-    `).join('')}
-  </ul>
+  ${pendingTasks.length > 0 ? `
+    <h3 class="section-title animate__animated animate__fadeIn"><i class="ph-fill ph-target"></i> A Fazer</h3>
+    <ul class="task-list">
+      ${pendingTasks.map((task, i) => `
+        <li class="task-item animate__animated animate__fadeInUp" style="animation-delay: ${i * 0.05}s">
+          <div class="task-content">
+            <form action="/checklist/toggle" method="POST" style="margin:0;">
+              <input type="hidden" name="id" value="${task.id}" />
+              <button type="submit" class="btn-invisible" style="color: var(--text);">
+                <i class="ph ph-circle" style="font-size: 1.6rem;"></i>
+              </button>
+            </form>
+            <span>${task.task.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</span>
+          </div>
+          <div class="task-actions">
+            <form action="/checklist/delete" method="POST" style="margin:0;">
+              <input type="hidden" name="id" value="${task.id}" />
+              <button type="submit" class="btn-invisible" style="color: #ef4444; font-size: 1.4rem;" title="Remover">
+                <i class="ph-fill ph-trash"></i>
+              </button>
+            </form>
+          </div>
+        </li>
+      `).join('')}
+    </ul>
+  ` : ''}
+
+  ${completedTasks.length > 0 ? `
+    <h3 class="section-title animate__animated animate__fadeIn" style="margin-top: 3rem; opacity: 0.7;"><i class="ph-fill ph-check-circle"></i> Concluídas</h3>
+    <ul class="task-list">
+      ${completedTasks.map((task, i) => `
+        <li class="task-item completed animate__animated animate__fadeInUp" style="animation-delay: ${i * 0.05}s">
+          <div class="task-content">
+            <form action="/checklist/toggle" method="POST" style="margin:0;">
+              <input type="hidden" name="id" value="${task.id}" />
+              <button type="submit" class="btn-invisible" style="color: var(--primary);">
+                <i class="ph-fill ph-check-circle" style="font-size: 1.6rem;"></i>
+              </button>
+            </form>
+            <span>${task.task.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</span>
+          </div>
+          <div class="task-actions">
+            <form action="/checklist/delete" method="POST" style="margin:0;">
+              <input type="hidden" name="id" value="${task.id}" />
+              <button type="submit" class="btn-invisible" style="color: #ef4444; font-size: 1.4rem;" title="Remover">
+                <i class="ph-fill ph-trash"></i>
+              </button>
+            </form>
+          </div>
+        </li>
+      `).join('')}
+    </ul>
+  ` : ''}
+
+  ${tasks.length === 0 ? `
+    <div class="empty-state animate__animated animate__fadeIn">
+      <i class="ph-duotone ph-leaf" style="font-size: 3.5rem; margin-bottom: 1rem; opacity:0.5;"></i>
+      <p style="font-style: italic;">Seu checklist está vazio. Que tal adicionar uma meta de estudo?</p>
+    </div>
+  ` : ''}
+
 </div>
 `}) %>
