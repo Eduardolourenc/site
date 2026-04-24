@@ -463,7 +463,7 @@ router.get('/calendar', (req, res) => {
 // Checklist
 router.get('/checklist', (req, res) => {
   db.all('SELECT * FROM checklist ORDER BY completed ASC, created_at DESC', (err, rows) => {
-    if (err) return res.status(500).send('Erro ao carregar checklist');
+    if (err) return res.status(500).send('Erro ao carregar checklist: ' + (err.message || JSON.stringify(err)));
     res.render('checklist', { tasks: rows || [] });
   });
 });
