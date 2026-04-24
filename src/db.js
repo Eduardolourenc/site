@@ -30,36 +30,42 @@ const db = {
       callback = params;
       params = [];
     }
-    pool.query(convertSql(sql), params || [])
-      .then(res => callback && callback(null, res.rows.map(processRow)))
-      .catch(err => {
-        console.error("DB.all err:", err, convertSql(sql));
-        callback && callback(err);
-      });
+    initPromise.then(() => {
+      pool.query(convertSql(sql), params || [])
+        .then(res => callback && callback(null, res.rows.map(processRow)))
+        .catch(err => {
+          console.error("DB.all err:", err, convertSql(sql));
+          callback && callback(err);
+        });
+    });
   },
   get: (sql, params, callback) => {
     if (typeof params === 'function') {
       callback = params;
       params = [];
     }
-    pool.query(convertSql(sql), params || [])
-      .then(res => callback && callback(null, res.rows[0] ? processRow(res.rows[0]) : null))
-      .catch(err => {
-        console.error("DB.get err:", err, convertSql(sql));
-        callback && callback(err);
-      });
+    initPromise.then(() => {
+      pool.query(convertSql(sql), params || [])
+        .then(res => callback && callback(null, res.rows[0] ? processRow(res.rows[0]) : null))
+        .catch(err => {
+          console.error("DB.get err:", err, convertSql(sql));
+          callback && callback(err);
+        });
+    });
   },
   run: (sql, params, callback) => {
     if (typeof params === 'function') {
       callback = params;
       params = [];
     }
-    pool.query(convertSql(sql), params || [])
-      .then(res => callback && callback(null))
-      .catch(err => {
-        console.error("DB.run err:", err, convertSql(sql));
-        callback && callback(err);
-      });
+    initPromise.then(() => {
+      pool.query(convertSql(sql), params || [])
+        .then(res => callback && callback(null))
+        .catch(err => {
+          console.error("DB.run err:", err, convertSql(sql));
+          callback && callback(err);
+        });
+    });
   }
 };
 
@@ -130,6 +136,6 @@ const init = async () => {
   }
 };
 
-init();
+const initPromise = init();
 
 module.exports = db;
