@@ -118,7 +118,7 @@
   }
 </style>
 
-<%- include('layout', { body: \`
+<%- include('layout', { body: `
 <section class="page-header">
   <div>
     <h1><i class="ph-duotone ph-check-square"></i> Checklist de Estudos</h1>
@@ -137,27 +137,27 @@
     <div class="column">
       <h3 class="section-title animate__animated animate__fadeIn"><i class="ph-fill ph-target"></i> A Fazer</h3>
       <ul class="task-list">
-        \${pendingTasks.length > 0 ? pendingTasks.map((task, i) => \`
-          <li class="task-item animate__animated animate__fadeInUp" style="animation-delay: \${i * 0.05}s">
+        ${pendingTasks.length > 0 ? pendingTasks.map((task, i) => `
+          <li class="task-item animate__animated animate__fadeInUp" style="animation-delay: ${i * 0.05}s">
             <div class="task-content">
               <form action="/checklist/toggle" method="POST" style="margin:0;">
-                <input type="hidden" name="id" value="\${task.id}" />
+                <input type="hidden" name="id" value="${task.id}" />
                 <button type="submit" class="btn-invisible" style="color: var(--text);">
                   <i class="ph ph-circle" style="font-size: 1.6rem;"></i>
                 </button>
               </form>
-              <span>\${task.task.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</span>
+              <span>${task.task.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</span>
             </div>
             <div class="task-actions">
               <form action="/checklist/delete" method="POST" style="margin:0;">
-                <input type="hidden" name="id" value="\${task.id}" />
+                <input type="hidden" name="id" value="${task.id}" />
                 <button type="submit" class="btn-invisible" style="color: #ef4444; font-size: 1.4rem;" title="Remover">
                   <i class="ph-fill ph-trash"></i>
                 </button>
               </form>
             </div>
           </li>
-        \`).join('') : \`<p class="empty-message animate__animated animate__fadeIn">Nenhuma tarefa pendente.</p>\`}
+        `).join('') : `<p class="empty-message animate__animated animate__fadeIn">Nenhuma tarefa pendente.</p>`}
       </ul>
     </div>
 
@@ -165,29 +165,29 @@
     <div class="column">
       <h3 class="section-title animate__animated animate__fadeIn" style="opacity: 0.7;"><i class="ph-fill ph-check-circle"></i> Concluídas</h3>
       <ul class="task-list">
-        \${completedTasks.length > 0 ? completedTasks.map((task, i) => \`
-          <li class="task-item completed animate__animated animate__fadeInUp" style="animation-delay: \${i * 0.05}s">
+        ${completedTasks.length > 0 ? completedTasks.map((task, i) => `
+          <li class="task-item completed animate__animated animate__fadeInUp" style="animation-delay: ${i * 0.05}s">
             <div class="task-content">
               <form action="/checklist/toggle" method="POST" style="margin:0;">
-                <input type="hidden" name="id" value="\${task.id}" />
+                <input type="hidden" name="id" value="${task.id}" />
                 <button type="submit" class="btn-invisible" style="color: var(--primary);">
                   <i class="ph-fill ph-check-circle" style="font-size: 1.6rem;"></i>
                 </button>
               </form>
-              <span>\${task.task.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</span>
+              <span>${task.task.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</span>
             </div>
             <div class="task-actions">
               <form action="/checklist/delete" method="POST" style="margin:0;">
-                <input type="hidden" name="id" value="\${task.id}" />
+                <input type="hidden" name="id" value="${task.id}" />
                 <button type="submit" class="btn-invisible" style="color: #ef4444; font-size: 1.4rem;" title="Remover">
                   <i class="ph-fill ph-trash"></i>
                 </button>
               </form>
             </div>
           </li>
-        \`).join('') : \`<p class="empty-message animate__animated animate__fadeIn">Você ainda não concluiu nenhuma tarefa.</p>\`}
+        `).join('') : `<p class="empty-message animate__animated animate__fadeIn">Você ainda não concluiu nenhuma tarefa.</p>`}
       </ul>
     </div>
   </div>
 </div>
-\`}) %>
+`}) %>
