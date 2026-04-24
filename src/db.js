@@ -133,9 +133,11 @@ const init = async () => {
     console.log("Banco de dados Postgres inicializado via Neon!");
   } catch(e){
     console.error("Erro ao inicializar DB:", e);
+    throw e;
   }
 };
 
 const initPromise = init();
+db._initPromise = initPromise;
 
 module.exports = db;

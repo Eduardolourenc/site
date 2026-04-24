@@ -461,11 +461,17 @@ router.get('/calendar', (req, res) => {
 });
 
 // Checklist
-router.get('/checklist', (req, res) => {
-  db.all('SELECT * FROM checklist ORDER BY completed ASC, created_at DESC', (err, rows) => {
-    if (err) return res.status(500).send('Erro ao carregar checklist: ' + (err.message || JSON.stringify(err)));
-    res.render('checklist', { tasks: rows || [] });
-  });
+router.get('/checklist', async (req, res) => {
+  try {
+    // Forçar criação da tabela
+    await db._initPromise;
+    db.all('SELECT * FROM checklist ORDER BY completed ASC, created_at DESC', (err, rows) => {
+      if (err) return res.status(500).send('Erro ao carregar checklist: ' + (err.message || JSON.stringify(err)));
+      res.render('checklist', { tasks: rows || [] });
+    });
+  } catch(e) {
+    res.status(500).send('Erro de INIT: ' + e.message);
+  }
 });
 
 router.post('/checklist/add', (req, res) => {
